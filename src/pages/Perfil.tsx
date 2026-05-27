@@ -341,6 +341,9 @@ export function Perfil() {
           <p className="text-xs text-stone-400">
             Construido con React, Vite, Tailwind, Dexie, Zustand, Recharts y Leaflet.
           </p>
+          <p className="text-xs text-stone-400">
+            App desenvolupada por Antoni Pozo Miró.
+          </p>
         </div>
       </Modal>
     </div>
