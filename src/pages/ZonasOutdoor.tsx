@@ -276,7 +276,7 @@ function ModalEditarZona({
   async function guardar() {
     if (!local || !local.nombre) return;
     if (local.id) {
-      await db.zonasOutdoor.update(local.id, local);
+      await db.zonasOutdoor.put(local);
     } else {
       await db.zonasOutdoor.add(local);
     }

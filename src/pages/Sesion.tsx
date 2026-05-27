@@ -47,7 +47,7 @@ export function Sesion() {
   }
 
   async function guardar() {
-    if (!borrador.modalidad) return;
+    if (!borrador || !borrador.modalidad) return;
     setGuardando(true);
     try {
       const fechaDia = format(parseISO(borrador.fecha), "yyyy-MM-dd");
