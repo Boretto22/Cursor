@@ -1,0 +1,102 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  body {
+    @apply bg-crux-beige text-stone-800 font-sans antialiased;
+    overscroll-behavior-y: none;
+  }
+
+  .dark body {
+    @apply bg-stone-900 text-stone-100;
+  }
+
+  input,
+  textarea,
+  select {
+    -webkit-user-select: text;
+    user-select: text;
+  }
+
+  /* Inputs */
+  input,
+  textarea,
+  select {
+    @apply font-sans;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-medium transition-all duration-150 active:scale-95 disabled:opacity-50 disabled:pointer-events-none;
+  }
+
+  .btn-primary {
+    @apply btn bg-crux-primary text-white shadow-soft hover:bg-crux-primary-dark;
+  }
+
+  .btn-secondary {
+    @apply btn bg-white text-crux-primary border border-crux-primary/20 hover:bg-crux-beige;
+  }
+
+  .btn-ghost {
+    @apply btn text-stone-700 hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-800;
+  }
+
+  .btn-danger {
+    @apply btn bg-crux-danger text-white hover:opacity-90;
+  }
+
+  .card {
+    @apply bg-white rounded-2xl shadow-soft p-4 dark:bg-stone-800;
+  }
+
+  .input {
+    @apply w-full bg-white border border-stone-200 rounded-xl px-4 py-2.5 text-stone-800
+           focus:outline-none focus:ring-2 focus:ring-crux-primary/40 focus:border-crux-primary
+           dark:bg-stone-800 dark:border-stone-700 dark:text-stone-100;
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium
+           bg-crux-beige text-stone-700 dark:bg-stone-700 dark:text-stone-200;
+  }
+
+  .chip-active {
+    @apply bg-crux-primary text-white;
+  }
+
+  .label {
+    @apply block text-sm font-medium text-stone-700 mb-1.5 dark:text-stone-300;
+  }
+}
+
+@layer utilities {
+  .safe-bottom {
+    padding-bottom: max(env(safe-area-inset-bottom), 0.5rem);
+  }
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+/* Leaflet ajustes */
+.leaflet-container {
+  font-family: "Inter", system-ui, sans-serif;
+  border-radius: 1rem;
+}
