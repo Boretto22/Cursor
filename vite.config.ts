@@ -10,8 +10,10 @@ export default defineConfig({
       includeAssets: [
         "favicon.svg",
         "robots.txt",
-        "icons/icon-192.png",
-        "icons/icon-512.png",
+        "logo.png",
+        "icon-192.png",
+        "icon-512.png",
+        "icon-512-maskable.png",
       ],
       manifest: {
         name: "CruxTracker",
@@ -27,19 +29,19 @@ export default defineConfig({
         categories: ["sports", "health", "fitness"],
         icons: [
           {
-            src: "icons/icon-192.png",
+            src: "icon-192.png",
             sizes: "192x192",
             type: "image/png",
             purpose: "any",
           },
           {
-            src: "icons/icon-512.png",
+            src: "icon-512.png",
             sizes: "512x512",
             type: "image/png",
             purpose: "any",
           },
           {
-            src: "icons/icon-512-maskable.png",
+            src: "icon-512-maskable.png",
             sizes: "512x512",
             type: "image/png",
             purpose: "maskable",
