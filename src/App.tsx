@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { RouterProvider } from "react-router-dom";
+import { Analytics } from "@vercel/analytics/react";
 import { router } from "./router";
 import { useAppStore } from "./store/appStore";
 import { ensurePerfil } from "./db/database";
@@ -15,5 +16,10 @@ export default function App() {
     ensurePerfil().catch(() => undefined);
   }, []);
 
-  return <RouterProvider router={router} />;
+  return (
+    <>
+      <RouterProvider router={router} />
+      <Analytics />
+    </>
+  );
 }
