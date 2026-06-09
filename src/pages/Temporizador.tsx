@@ -8,7 +8,7 @@ import {
   Trash2,
   ChevronDown,
   ChevronUp,
-  Timer,
+  PlayCircle,
   CheckCircle2,
 } from "lucide-react";
 import { PageHeader } from "../components/ui/PageHeader";
@@ -19,14 +19,11 @@ import { Modal } from "../components/ui/Modal";
 import { db } from "../db/database";
 import type { TimerPreset } from "../db/types";
 import { hoyDateTimeISO } from "../utils/fechas";
-import { beep, beepDoble, vibrar } from "../utils/audio";
+import { beep, vibrar } from "../utils/audio";
 
-type EstadoTimer =
-  | "idle"
-  | "rep"
-  | "descanso_rep"
-  | "descanso_series"
-  | "done";
+// ─── types ───────────────────────────────────────────────────────────────────
+
+type EstadoTimer = "idle" | "rep" | "descanso_rep" | "descanso_series" | "done";
 
 interface ConfigTimer {
   series: number;
@@ -36,6 +33,10 @@ interface ConfigTimer {
   descansoSeries: number;
 }
 
+type RawFields = Record<keyof ConfigTimer, string>;
+
+// ─── helpers ─────────────────────────────────────────────────────────────────
+
 const CONFIG_DEFECTO: ConfigTimer = {
   series: 3,
   repeticiones: 5,
@@ -44,6 +45,27 @@ const CONFIG_DEFECTO: ConfigTimer = {
   descansoSeries: 60,
 };
 
+function toRaw(c: ConfigTimer): RawFields {
+  return {
+    series: String(c.series),
+    repeticiones: String(c.repeticiones),
+    duracionRep: String(c.duracionRep),
+    descansoRep: String(c.descansoRep),
+    descansoSeries: String(c.descansoSeries),
+  };
+}
+
+function parseRaw(raw: RawFields): ConfigTimer {
+  const p = (s: string) => Math.max(1, parseInt(s, 10) || 1);
+  return {
+    series: p(raw.series),
+    repeticiones: p(raw.repeticiones),
+    duracionRep: p(raw.duracionRep),
+    descansoRep: p(raw.descansoRep),
+    descansoSeries: p(raw.descansoSeries),
+  };
+}
+
 function formatSeg(s: number): string {
   const m = Math.floor(s / 60);
   const sec = s % 60;
@@ -51,12 +73,33 @@ function formatSeg(s: number): string {
 }
 
 function calcularTotalSeg(c: ConfigTimer): number {
-  const repsPorSerie = c.repeticiones * c.duracionRep + (c.repeticiones - 1) * c.descansoRep;
+  const repsPorSerie =
+    c.repeticiones * c.duracionRep + (c.repeticiones - 1) * c.descansoRep;
   return c.series * repsPorSerie + (c.series - 1) * c.descansoSeries;
 }
 
+// ─── audio helpers ────────────────────────────────────────────────────────────
+
+/** Short high beep — rep transitions */
+function beepRep() {
+  beep(880, 100, 0.15);
+}
+/** Long low beep — series / completion transitions */
+function beepSeries() {
+  beep(440, 300, 0.18);
+}
+/** Double ascending beep — workout done */
+function beepDone() {
+  beep(440, 300, 0.18);
+  setTimeout(() => beep(880, 250, 0.15), 380);
+}
+
+// ─── component ────────────────────────────────────────────────────────────────
+
 export function Temporizador() {
+  const [rawFields, setRawFields] = useState<RawFields>(toRaw(CONFIG_DEFECTO));
   const [config, setConfig] = useState<ConfigTimer>(CONFIG_DEFECTO);
+
   const [estado, setEstado] = useState<EstadoTimer>("idle");
   const [corriendo, setCorriendo] = useState(false);
   const [restante, setRestante] = useState(0);
@@ -79,6 +122,22 @@ export function Temporizador() {
     db.temporizadorPresets.orderBy("creadoEn").reverse().toArray()
   );
 
+  // ── raw-field helpers ───────────────────────────────────────────────────────
+
+  function setRawField(k: keyof ConfigTimer, v: string) {
+    // allow only digits
+    if (v !== "" && !/^\d+$/.test(v)) return;
+    setRawFields((prev) => ({ ...prev, [k]: v }));
+  }
+
+  function commitField(k: keyof ConfigTimer) {
+    const val = Math.max(1, parseInt(rawFields[k], 10) || 1);
+    setRawFields((prev) => ({ ...prev, [k]: String(val) }));
+    setConfig((c) => ({ ...c, [k]: val }));
+  }
+
+  // ── timer state machine ─────────────────────────────────────────────────────
+
   const avanzar = useCallback(() => {
     const c = configRef.current;
     const s = serieRef.current;
@@ -87,23 +146,24 @@ export function Temporizador() {
 
     if (est === "rep") {
       if (r < c.repeticiones) {
-        // hay más reps en esta serie → descanso entre reps
         estadoRef.current = "descanso_rep";
         setEstado("descanso_rep");
         restanteRef.current = c.descansoRep;
         setRestante(c.descansoRep);
+        beepRep();
+        vibrar([80, 30, 80]);
       } else if (s < c.series) {
-        // última rep de serie, hay más series → descanso entre series
         estadoRef.current = "descanso_series";
         setEstado("descanso_series");
         restanteRef.current = c.descansoSeries;
         setRestante(c.descansoSeries);
+        beepSeries();
+        vibrar([150, 50, 150]);
       } else {
-        // todo completado
         estadoRef.current = "done";
         setEstado("done");
         setCorriendo(false);
-        beepDoble();
+        beepDone();
         vibrar([200, 100, 200, 100, 400]);
         if (intervalRef.current) window.clearInterval(intervalRef.current);
         return;
@@ -115,6 +175,8 @@ export function Temporizador() {
       setEstado("rep");
       restanteRef.current = c.duracionRep;
       setRestante(c.duracionRep);
+      beepRep();
+      vibrar([80, 30, 80]);
     } else if (est === "descanso_series") {
       serieRef.current = s + 1;
       setSerieActual(s + 1);
@@ -124,9 +186,9 @@ export function Temporizador() {
       setEstado("rep");
       restanteRef.current = c.duracionRep;
       setRestante(c.duracionRep);
+      beepSeries();
+      vibrar([150, 50, 150]);
     }
-    beepDoble();
-    vibrar([100, 50, 100]);
   }, []);
 
   useEffect(() => {
@@ -138,11 +200,10 @@ export function Temporizador() {
       restanteRef.current -= 1;
       setRestante(restanteRef.current);
       setTiempoElapsado((t) => t + 1);
-
       if (restanteRef.current <= 0) {
         avanzar();
       } else if (restanteRef.current <= 3) {
-        beep(440, 100, 0.08);
+        beep(660, 80, 0.06);
       }
     }, 1000);
     return () => {
@@ -150,18 +211,25 @@ export function Temporizador() {
     };
   }, [corriendo, avanzar]);
 
-  function iniciar() {
-    configRef.current = config;
-    const total = calcularTotalSeg(config);
+  // ── actions ─────────────────────────────────────────────────────────────────
+
+  function iniciar(configOverride?: ConfigTimer) {
+    const c = configOverride ?? parseRaw(rawFields);
+    // sync display so fields reflect what's running
+    setConfig(c);
+    setRawFields(toRaw(c));
+    configRef.current = c;
+
+    const total = calcularTotalSeg(c);
     setTiempoTotal(total);
     serieRef.current = 1;
     repRef.current = 1;
     estadoRef.current = "rep";
-    restanteRef.current = config.duracionRep;
+    restanteRef.current = c.duracionRep;
     setSerieActual(1);
     setRepActual(1);
     setEstado("rep");
-    setRestante(config.duracionRep);
+    setRestante(c.duracionRep);
     setTiempoElapsado(0);
     setMostrarConfig(false);
     setCorriendo(true);
@@ -184,55 +252,55 @@ export function Temporizador() {
     setMostrarConfig(true);
   }
 
-  function setField(k: keyof ConfigTimer, v: number) {
-    setConfig((c) => ({ ...c, [k]: Math.max(1, v) }));
-  }
-
   async function guardarPreset() {
     if (!nombrePreset.trim()) return;
+    const c = parseRaw(rawFields);
     await db.temporizadorPresets.add({
       nombre: nombrePreset.trim(),
-      ...config,
+      ...c,
       creadoEn: hoyDateTimeISO(),
     });
     setNombrePreset("");
     setMostrarGuardar(false);
   }
 
-  async function cargarPreset(p: TimerPreset) {
-    setConfig({
+  function cargarPreset(p: TimerPreset) {
+    const c: ConfigTimer = {
       series: p.series,
       repeticiones: p.repeticiones,
       duracionRep: p.duracionRep,
       descansoRep: p.descansoRep,
       descansoSeries: p.descansoSeries,
-    });
-    resetear();
+    };
+    iniciar(c);
   }
+
+  // ── computed ─────────────────────────────────────────────────────────────────
 
   const progreso = tiempoTotal > 0 ? (tiempoElapsado / tiempoTotal) * 100 : 0;
 
+  const configDisplayed = parseRaw(rawFields);
+  const estimado = calcularTotalSeg(configDisplayed);
+
   const etiquetaEstado = () => {
     switch (estado) {
-      case "rep":
-        return `Repetición ${repActual}/${config.repeticiones}`;
-      case "descanso_rep":
-        return "Descanso entre reps";
-      case "descanso_series":
-        return `Descanso entre series`;
-      default:
-        return "";
+      case "rep":       return `Repetición ${repActual}/${config.repeticiones}`;
+      case "descanso_rep":   return "Descanso entre reps";
+      case "descanso_series": return "Descanso entre series";
+      default:          return "";
     }
   };
 
   const colorEstado = () => {
     switch (estado) {
-      case "rep": return "text-crux-primary";
-      case "descanso_rep": return "text-amber-600";
-      case "descanso_series": return "text-blue-600";
-      default: return "";
+      case "rep":            return "text-crux-primary";
+      case "descanso_rep":   return "text-amber-600";
+      case "descanso_series":return "text-blue-600";
+      default:               return "";
     }
   };
+
+  // ── completion screen ────────────────────────────────────────────────────────
 
   if (estado === "done") {
     return (
@@ -243,7 +311,8 @@ export function Temporizador() {
         <div>
           <h2 className="text-2xl font-bold mb-1">¡Completado!</h2>
           <p className="text-stone-500 dark:text-stone-400">
-            {config.series} series · {config.repeticiones} reps · {formatSeg(tiempoElapsado)} totales
+            {config.series} series · {config.repeticiones} reps ·{" "}
+            {formatSeg(tiempoElapsado)} totales
           </p>
         </div>
         <Button onClick={resetear} tamano="lg" bloque>
@@ -254,11 +323,13 @@ export function Temporizador() {
     );
   }
 
+  // ── main render ──────────────────────────────────────────────────────────────
+
   return (
     <div className="space-y-4 animate-fade-in">
       <PageHeader titulo="Temporizador" subtitulo="Entrenamiento por intervalos" />
 
-      {/* Panel de configuración */}
+      {/* Config panel */}
       <Card>
         <button
           className="w-full flex items-center justify-between"
@@ -275,55 +346,65 @@ export function Temporizador() {
             <div className="grid grid-cols-2 gap-3">
               <Input
                 label="Series"
-                type="number"
+                type="text"
                 inputMode="numeric"
-                min={1}
-                value={config.series}
-                onChange={(e) => setField("series", Number(e.target.value))}
+                pattern="[0-9]*"
+                placeholder={String(CONFIG_DEFECTO.series)}
+                value={rawFields.series}
+                onChange={(e) => setRawField("series", e.target.value)}
+                onBlur={() => commitField("series")}
               />
               <Input
                 label="Repeticiones / serie"
-                type="number"
+                type="text"
                 inputMode="numeric"
-                min={1}
-                value={config.repeticiones}
-                onChange={(e) => setField("repeticiones", Number(e.target.value))}
+                pattern="[0-9]*"
+                placeholder={String(CONFIG_DEFECTO.repeticiones)}
+                value={rawFields.repeticiones}
+                onChange={(e) => setRawField("repeticiones", e.target.value)}
+                onBlur={() => commitField("repeticiones")}
               />
             </div>
             <div className="grid grid-cols-3 gap-3">
               <Input
                 label="Duración rep (s)"
-                type="number"
+                type="text"
                 inputMode="numeric"
-                min={1}
-                value={config.duracionRep}
-                onChange={(e) => setField("duracionRep", Number(e.target.value))}
+                pattern="[0-9]*"
+                placeholder={String(CONFIG_DEFECTO.duracionRep)}
+                value={rawFields.duracionRep}
+                onChange={(e) => setRawField("duracionRep", e.target.value)}
+                onBlur={() => commitField("duracionRep")}
               />
               <Input
                 label="Descanso reps (s)"
-                type="number"
+                type="text"
                 inputMode="numeric"
-                min={1}
-                value={config.descansoRep}
-                onChange={(e) => setField("descansoRep", Number(e.target.value))}
+                pattern="[0-9]*"
+                placeholder={String(CONFIG_DEFECTO.descansoRep)}
+                value={rawFields.descansoRep}
+                onChange={(e) => setRawField("descansoRep", e.target.value)}
+                onBlur={() => commitField("descansoRep")}
               />
               <Input
                 label="Descanso series (s)"
-                type="number"
+                type="text"
                 inputMode="numeric"
-                min={1}
-                value={config.descansoSeries}
-                onChange={(e) => setField("descansoSeries", Number(e.target.value))}
+                pattern="[0-9]*"
+                placeholder={String(CONFIG_DEFECTO.descansoSeries)}
+                value={rawFields.descansoSeries}
+                onChange={(e) => setRawField("descansoSeries", e.target.value)}
+                onBlur={() => commitField("descansoSeries")}
               />
             </div>
             <p className="text-xs text-stone-500 text-right">
               Tiempo total estimado:{" "}
               <span className="font-semibold text-crux-primary">
-                {formatSeg(calcularTotalSeg(config))}
+                {formatSeg(estimado)}
               </span>
             </p>
             <div className="flex gap-2 pt-1">
-              <Button bloque onClick={iniciar}>
+              <Button bloque onClick={() => iniciar()}>
                 <Play className="w-4 h-4" />
                 Iniciar
               </Button>
@@ -335,14 +416,14 @@ export function Temporizador() {
         )}
       </Card>
 
-      {/* Timer activo */}
+      {/* Active timer */}
       {estado !== "idle" && (
         <Card className="text-center">
           <div className="mb-2">
             <p className={`text-sm font-semibold uppercase tracking-wide ${colorEstado()}`}>
               {etiquetaEstado()}
             </p>
-            <p className="text-xs text-stone-500">
+            <p className="text-xs text-stone-500 dark:text-stone-400">
               Serie {serieActual}/{config.series}
             </p>
           </div>
@@ -352,7 +433,11 @@ export function Temporizador() {
               <circle cx="50" cy="50" r="44" stroke="#E8E4DA" strokeWidth="8" fill="none" />
               <circle
                 cx="50" cy="50" r="44"
-                stroke={estado === "rep" ? "#4A7C59" : estado === "descanso_rep" ? "#D9A441" : "#3B82F6"}
+                stroke={
+                  estado === "rep" ? "#4A7C59"
+                  : estado === "descanso_rep" ? "#D9A441"
+                  : "#3B82F6"
+                }
                 strokeWidth="8"
                 fill="none"
                 strokeLinecap="round"
@@ -373,9 +458,9 @@ export function Temporizador() {
             </div>
           </div>
 
-          {/* Barra progreso global */}
+          {/* Global progress bar */}
           <div className="mb-4">
-            <div className="flex justify-between text-xs text-stone-500 mb-1">
+            <div className="flex justify-between text-xs text-stone-500 dark:text-stone-400 mb-1">
               <span>Progreso total</span>
               <span>{Math.round(progreso)}%</span>
             </div>
@@ -387,7 +472,7 @@ export function Temporizador() {
             </div>
           </div>
 
-          {/* Bolas de progreso reps */}
+          {/* Rep dots */}
           <div className="flex justify-center gap-1.5 mb-4 flex-wrap">
             {Array.from({ length: config.repeticiones }).map((_, i) => (
               <div
@@ -415,7 +500,7 @@ export function Temporizador() {
         </Card>
       )}
 
-      {/* Presets guardados */}
+      {/* Saved presets */}
       {presets && presets.length > 0 && (
         <div>
           <h2 className="text-sm font-semibold text-stone-600 dark:text-stone-400 mb-2 px-1 uppercase tracking-wide">
@@ -423,37 +508,45 @@ export function Temporizador() {
           </h2>
           <div className="space-y-2">
             {presets.map((p) => (
-              <Card key={p.id} className="!py-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-crux-beige dark:bg-stone-700 flex items-center justify-center">
-                    <Timer className="w-5 h-5 text-crux-primary" />
+              <Card key={p.id} className="!p-0 overflow-hidden">
+                <button
+                  className="w-full flex items-center gap-3 p-3 text-left hover:bg-stone-50 dark:hover:bg-stone-700/60 active:bg-stone-100 dark:active:bg-stone-700 transition-colors"
+                  onClick={() => cargarPreset(p)}
+                >
+                  <div className="w-10 h-10 rounded-xl bg-crux-primary/10 flex items-center justify-center shrink-0">
+                    <PlayCircle className="w-5 h-5 text-crux-primary" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold truncate">{p.nombre}</p>
-                    <p className="text-xs text-stone-500">
-                      {p.series} series · {p.repeticiones} reps · {p.duracionRep}s/{p.descansoRep}s · descanso {p.descansoSeries}s
+                    <p className="font-semibold truncate text-stone-800 dark:text-stone-100">
+                      {p.nombre}
+                    </p>
+                    <p className="text-xs text-stone-500 dark:text-stone-400">
+                      {p.series}×{p.repeticiones} · {p.duracionRep}s trabajo · {p.descansoRep}s/{p.descansoSeries}s descanso
                     </p>
                   </div>
-                  <div className="flex gap-1">
-                    <Button tamano="sm" onClick={() => cargarPreset(p)}>
-                      Cargar
-                    </Button>
-                    <Button
-                      tamano="sm"
-                      variante="ghost"
-                      onClick={() => db.temporizadorPresets.delete(p.id!)}
+                  <div className="flex items-center gap-1 shrink-0">
+                    <span className="text-xs font-medium text-crux-primary hidden sm:inline">
+                      Iniciar
+                    </span>
+                    <button
+                      className="p-1.5 text-stone-400 hover:text-crux-danger transition-colors"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        db.temporizadorPresets.delete(p.id!);
+                      }}
+                      aria-label="Eliminar preset"
                     >
                       <Trash2 className="w-4 h-4" />
-                    </Button>
+                    </button>
                   </div>
-                </div>
+                </button>
               </Card>
             ))}
           </div>
         </div>
       )}
 
-      {/* Modal guardar preset */}
+      {/* Save preset modal */}
       <Modal
         abierto={mostrarGuardar}
         onClose={() => setMostrarGuardar(false)}
@@ -466,9 +559,9 @@ export function Temporizador() {
             value={nombrePreset}
             onChange={(e) => setNombrePreset(e.target.value)}
           />
-          <p className="text-xs text-stone-500">
-            {config.series} series · {config.repeticiones} reps · {config.duracionRep}s duración ·{" "}
-            {config.descansoRep}s descanso reps · {config.descansoSeries}s descanso series
+          <p className="text-xs text-stone-500 dark:text-stone-400">
+            {configDisplayed.series} series · {configDisplayed.repeticiones} reps ·{" "}
+            {configDisplayed.duracionRep}s trabajo · {configDisplayed.descansoRep}s/{configDisplayed.descansoSeries}s descanso
           </p>
           <div className="flex gap-2 pt-2">
             <Button variante="ghost" onClick={() => setMostrarGuardar(false)} bloque>

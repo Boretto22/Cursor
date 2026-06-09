@@ -14,18 +14,23 @@ function ctx(): AudioContext {
 export function beep(frecuencia = 880, duracionMs = 150, volumen = 0.15) {
   try {
     const c = ctx();
-    const osc = c.createOscillator();
-    const gain = c.createGain();
-    osc.type = "sine";
-    osc.frequency.value = frecuencia;
-    gain.gain.value = volumen;
-    osc.connect(gain).connect(c.destination);
-    osc.start();
-    setTimeout(() => {
-      osc.stop();
-      osc.disconnect();
-      gain.disconnect();
-    }, duracionMs);
+    const play = () => {
+      const osc = c.createOscillator();
+      const gain = c.createGain();
+      osc.type = "sine";
+      osc.frequency.value = frecuencia;
+      gain.gain.value = volumen;
+      osc.connect(gain).connect(c.destination);
+      osc.start();
+      setTimeout(() => {
+        try { osc.stop(); osc.disconnect(); gain.disconnect(); } catch { /* noop */ }
+      }, duracionMs);
+    };
+    if (c.state === "suspended") {
+      c.resume().then(play).catch(() => {});
+    } else {
+      play();
+    }
   } catch {
     /* silenciar errores de autoplay */
   }
