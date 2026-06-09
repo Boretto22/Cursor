@@ -65,16 +65,25 @@ function CentrarBoton() {
   );
 }
 
+const iconoPendiente = new L.DivIcon({
+  className: "",
+  html: `<div style="background:#8B6914;width:32px;height:32px;border-radius:50%;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;color:white;font-size:16px;">📍</div>`,
+  iconSize: [32, 32],
+  iconAnchor: [16, 16],
+});
+
 export function ZonasOutdoor() {
   const navigate = useNavigate();
   const [editando, setEditando] = useState<ZonaOutdoor | null>(null);
   const [seleccionada, setSeleccionada] = useState<ZonaOutdoor | null>(null);
   const [modoAgregar, setModoAgregar] = useState(false);
+  const [pinPendiente, setPinPendiente] = useState<[number, number] | null>(null);
 
   const zonas = useLiveQuery(async () => db.zonasOutdoor.toArray());
 
   function onMapClick(lat: number, lng: number) {
     if (!modoAgregar) return;
+    setPinPendiente([lat, lng]);
     setEditando({
       nombre: "",
       lat,
@@ -86,6 +95,7 @@ export function ZonasOutdoor() {
     setModoAgregar(false);
   }
 
+  const mapaColapsado = pinPendiente !== null;
   const centro: [number, number] =
     zonas && zonas.length > 0 ? [zonas[0].lat, zonas[0].lng] : [42.5, 1.5];
 
@@ -105,7 +115,10 @@ export function ZonasOutdoor() {
             <Button
               tamano="sm"
               variante={modoAgregar ? "danger" : "primary"}
-              onClick={() => setModoAgregar((v) => !v)}
+              onClick={() => {
+                setModoAgregar((v) => !v);
+                setPinPendiente(null);
+              }}
             >
               {modoAgregar ? "Cancelar" : <><Plus className="w-4 h-4" /> Añadir</>}
             </Button>
@@ -120,7 +133,10 @@ export function ZonasOutdoor() {
         </div>
       )}
 
-      <div className="relative h-[55vh] rounded-2xl overflow-hidden shadow-soft">
+      <div
+        className="relative rounded-2xl overflow-hidden shadow-soft transition-all duration-300"
+        style={{ height: mapaColapsado ? "150px" : "55vh" }}
+      >
         <MapContainer
           center={centro}
           zoom={zonas && zonas.length > 0 ? 6 : 4}
@@ -147,6 +163,9 @@ export function ZonasOutdoor() {
               </Popup>
             </Marker>
           ))}
+          {pinPendiente && (
+            <Marker position={pinPendiente} icon={iconoPendiente} />
+          )}
           <ClickHandler onClick={onMapClick} />
           <CentrarBoton />
         </MapContainer>
@@ -187,7 +206,10 @@ export function ZonasOutdoor() {
 
       <ModalEditarZona
         zona={editando}
-        onClose={() => setEditando(null)}
+        onClose={() => {
+          setEditando(null);
+          setPinPendiente(null);
+        }}
       />
 
       <Modal
