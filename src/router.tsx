@@ -3,7 +3,7 @@ import { Layout } from "./components/layout/Layout";
 import { Inicio } from "./pages/Inicio";
 import { Sesion } from "./pages/Sesion";
 import { Progreso } from "./pages/Progreso";
-import { Tecnica } from "./pages/Tecnica";
+import { Temporizador } from "./pages/Temporizador";
 import { Perfil } from "./pages/Perfil";
 import { Estiramientos } from "./pages/Estiramientos";
 import { Proyectos } from "./pages/Proyectos";
@@ -20,7 +20,7 @@ export const router = createBrowserRouter([
       { index: true, element: <Inicio /> },
       { path: "sesion", element: <Sesion /> },
       { path: "progreso", element: <Progreso /> },
-      { path: "tecnica", element: <Tecnica /> },
+      { path: "temporizador", element: <Temporizador /> },
       { path: "perfil", element: <Perfil /> },
       { path: "estiramientos", element: <Estiramientos /> },
       { path: "proyectos", element: <Proyectos /> },

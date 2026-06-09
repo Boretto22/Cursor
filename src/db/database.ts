@@ -11,6 +11,7 @@ import type {
   ZonaOutdoor,
   SesionPlanificada,
   PerfilUsuario,
+  TimerPreset,
 } from "./types";
 
 export class CruxTrackerDB extends Dexie {
@@ -25,6 +26,7 @@ export class CruxTrackerDB extends Dexie {
   zonasOutdoor!: Table<ZonaOutdoor, number>;
   sesionesPlanificadas!: Table<SesionPlanificada, number>;
   perfil!: Table<PerfilUsuario, number>;
+  temporizadorPresets!: Table<TimerPreset, number>;
 
   constructor() {
     super("CruxTrackerDB");
@@ -42,6 +44,10 @@ export class CruxTrackerDB extends Dexie {
       zonasOutdoor: "++id, nombre, fechaPrimeraVisita",
       sesionesPlanificadas: "++id, semanaISO, dia, tipo, completado",
       perfil: "++id",
+    });
+
+    this.version(2).stores({
+      temporizadorPresets: "++id, nombre, creadoEn",
     });
   }
 }

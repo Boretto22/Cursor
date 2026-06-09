@@ -202,3 +202,14 @@ export interface PerfilUsuario {
   modoOscuro: boolean;
   notificacionesActivas: boolean;
 }
+
+export interface TimerPreset {
+  id?: number;
+  nombre: string;
+  series: number;
+  repeticiones: number;
+  duracionRep: number;    // segundos
+  descansoRep: number;    // segundos entre repeticiones
+  descansoSeries: number; // segundos entre series
+  creadoEn: string;
+}

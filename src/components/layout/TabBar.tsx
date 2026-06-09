@@ -1,12 +1,12 @@
 import { NavLink } from "react-router-dom";
-import { Home, PlusCircle, BarChart3, Dumbbell, User } from "lucide-react";
+import { Home, PlusCircle, BarChart3, Timer, User } from "lucide-react";
 import { cn } from "../../utils/cn";
 
 const tabs = [
   { to: "/", label: "Inicio", icon: Home, end: true },
   { to: "/sesion", label: "Sesión", icon: PlusCircle },
   { to: "/progreso", label: "Progreso", icon: BarChart3 },
-  { to: "/tecnica", label: "Técnica", icon: Dumbbell },
+  { to: "/temporizador", label: "Temporizador", icon: Timer },
   { to: "/perfil", label: "Perfil", icon: User },
 ];
 

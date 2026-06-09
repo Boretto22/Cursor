@@ -6,7 +6,6 @@ import { BarraProgresoPasos } from "../components/session/BarraProgresoPasos";
 import { Paso1Modalidad } from "../components/session/Paso1Modalidad";
 import { Paso2Vias } from "../components/session/Paso2Vias";
 import { Paso3Sensacion } from "../components/session/Paso3Sensacion";
-import { Paso4Tecnicas } from "../components/session/Paso4Tecnicas";
 import { Paso5Estiramientos } from "../components/session/Paso5Estiramientos";
 import { Paso6Resumen } from "../components/session/Paso6Resumen";
 import { Button } from "../components/ui/Button";
@@ -15,7 +14,7 @@ import { db } from "../db/database";
 import { format, parseISO } from "date-fns";
 import { hoyDateTimeISO } from "../utils/fechas";
 
-const ETIQUETAS = ["Modalidad", "Vías", "Sensación", "Técnica", "Estiramientos", "Resumen"];
+const ETIQUETAS = ["Modalidad", "Vías", "Sensación", "Estiramientos", "Resumen"];
 
 export function Sesion() {
   const navigate = useNavigate();
@@ -40,7 +39,7 @@ export function Sesion() {
   })();
 
   function siguiente() {
-    if (paso < 5) setPaso(paso + 1);
+    if (paso < 4) setPaso(paso + 1);
   }
   function anterior() {
     if (paso > 0) setPaso(paso - 1);
@@ -125,15 +124,14 @@ export function Sesion() {
         </button>
       </div>
 
-      <BarraProgresoPasos paso={paso} total={6} etiquetas={ETIQUETAS} />
+      <BarraProgresoPasos paso={paso} total={5} etiquetas={ETIQUETAS} />
 
       <div className="pb-4">
         {paso === 0 && <Paso1Modalidad />}
         {paso === 1 && <Paso2Vias />}
         {paso === 2 && <Paso3Sensacion />}
-        {paso === 3 && <Paso4Tecnicas />}
-        {paso === 4 && <Paso5Estiramientos />}
-        {paso === 5 && <Paso6Resumen />}
+        {paso === 3 && <Paso5Estiramientos />}
+        {paso === 4 && <Paso6Resumen />}
       </div>
 
       <div className="fixed bottom-16 inset-x-0 px-4 pb-3 pt-3 bg-gradient-to-t from-crux-beige via-crux-beige to-transparent dark:from-stone-900 dark:via-stone-900 z-30">
@@ -144,7 +142,7 @@ export function Sesion() {
               Anterior
             </Button>
           )}
-          {paso < 5 ? (
+          {paso < 4 ? (
             <Button onClick={siguiente} bloque disabled={!puedeAvanzar}>
               Siguiente
               <ArrowRight className="w-4 h-4" />
@@ -155,6 +153,7 @@ export function Sesion() {
               {guardando ? "Guardando..." : "Guardar sesión"}
             </Button>
           )}
+
         </div>
         <p className="text-center text-[10px] text-stone-500 mt-1">
           Borrador guardado automáticamente
