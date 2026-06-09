@@ -169,15 +169,15 @@ export function Inicio() {
                   <div className="flex items-center gap-3">
                     <div className="text-2xl">{mod?.emoji ?? "🧗"}</div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-sm truncate">
+                      <p className="font-semibold text-sm truncate text-stone-800 dark:text-stone-100">
                         {mod?.nombre} {s.nombreLugar ? `· ${s.nombreLugar}` : ""}
                       </p>
-                      <p className="text-xs text-stone-500">
+                      <p className="text-xs text-stone-500 dark:text-stone-400">
                         {formatearFechaCorta(s.fechaDia)} · {s.duracionMin ?? "—"} min
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="text-xs text-stone-500">Sensación</p>
+                      <p className="text-xs text-stone-500 dark:text-stone-400">Sensación</p>
                       <p className="font-semibold text-crux-primary">{s.sensacion}/10</p>
                     </div>
                   </div>

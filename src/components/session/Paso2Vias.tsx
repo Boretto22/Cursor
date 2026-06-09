@@ -196,7 +196,7 @@ function EditorVia({
               className={`p-3 rounded-xl text-sm font-medium text-left transition-all active:scale-95 ${
                 local.resultado === r.id
                   ? "bg-crux-primary text-white"
-                  : `${r.color} dark:bg-stone-700 dark:text-stone-100`
+                  : `${r.color} dark:bg-stone-800 dark:text-stone-200`
               }`}
             >
               <span className="text-lg">{r.emoji}</span> {r.label}

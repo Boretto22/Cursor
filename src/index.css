@@ -71,7 +71,7 @@
   }
 
   .chip-active {
-    @apply bg-crux-primary text-white;
+    @apply !bg-crux-primary text-white;
   }
 
   .label {

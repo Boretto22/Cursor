@@ -156,7 +156,7 @@ export function Planificador() {
                       className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm ${
                         esHoy
                           ? "bg-crux-primary text-white"
-                          : "bg-crux-beige dark:bg-stone-700"
+                          : "bg-crux-beige dark:bg-stone-800 dark:text-stone-300"
                       }`}
                     >
                       {d.corto}
@@ -308,7 +308,7 @@ function ModalSesion({
                 className={`py-2 rounded-lg text-sm font-bold transition-all ${
                   local.dia === d.id
                     ? "bg-crux-primary text-white"
-                    : "bg-crux-beige dark:bg-stone-700"
+                    : "bg-crux-beige dark:bg-stone-800 dark:text-stone-300"
                 }`}
               >
                 {d.corto}

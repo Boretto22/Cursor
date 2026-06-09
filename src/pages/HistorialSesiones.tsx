@@ -82,18 +82,18 @@ export function HistorialSesiones() {
                   {mod?.emoji}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold truncate">
+                  <p className="font-semibold truncate text-stone-800 dark:text-stone-100">
                     {mod?.nombre}
                     {s.nombreLugar && (
-                      <span className="text-stone-500"> · {s.nombreLugar}</span>
+                      <span className="text-stone-500 dark:text-stone-400"> · {s.nombreLugar}</span>
                     )}
                   </p>
-                  <p className="text-xs text-stone-500">
+                  <p className="text-xs text-stone-500 dark:text-stone-400">
                     {formatearFechaCorta(s.fechaDia)} · {s.duracionMin ?? "—"} min
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="text-xs text-stone-500">Sensación</p>
+                  <p className="text-xs text-stone-500 dark:text-stone-400">Sensación</p>
                   <p className="font-bold text-crux-primary">{s.sensacion}/10</p>
                 </div>
               </div>
@@ -127,16 +127,16 @@ export function HistorialSesiones() {
 
             <div className="grid grid-cols-3 gap-2 text-center">
               <Card className="!p-3">
-                <p className="text-xs text-stone-500">Vías</p>
-                <p className="font-bold">{detalle.vias.length}</p>
+                <p className="text-xs text-stone-500 dark:text-stone-400">Vías</p>
+                <p className="font-bold text-stone-800 dark:text-stone-100">{detalle.vias.length}</p>
               </Card>
               <Card className="!p-3">
-                <p className="text-xs text-stone-500">Sensación</p>
-                <p className="font-bold">{detalle.sesion.sensacion}/10</p>
+                <p className="text-xs text-stone-500 dark:text-stone-400">Sensación</p>
+                <p className="font-bold text-stone-800 dark:text-stone-100">{detalle.sesion.sensacion}/10</p>
               </Card>
               <Card className="!p-3">
-                <p className="text-xs text-stone-500">Fatiga</p>
-                <p className="font-bold">{detalle.sesion.fatiga}/10</p>
+                <p className="text-xs text-stone-500 dark:text-stone-400">Fatiga</p>
+                <p className="font-bold text-stone-800 dark:text-stone-100">{detalle.sesion.fatiga}/10</p>
               </Card>
             </div>
 
@@ -149,7 +149,7 @@ export function HistorialSesiones() {
                     return (
                       <div
                         key={v.id}
-                        className="flex items-center gap-3 p-2 rounded-xl bg-crux-beige/60 dark:bg-stone-700/40"
+                        className="flex items-center gap-3 p-2 rounded-xl bg-crux-beige/60 dark:bg-stone-700"
                       >
                         {v.fotoBase64 ? (
                           <img
@@ -163,10 +163,10 @@ export function HistorialSesiones() {
                           </div>
                         )}
                         <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-sm truncate">
+                          <p className="font-semibold text-sm truncate text-stone-800 dark:text-stone-100">
                             {v.nombre || `Vía ${v.grado}`}
                           </p>
-                          <p className="text-xs text-stone-500">
+                          <p className="text-xs text-stone-500 dark:text-stone-400">
                             {r.emoji} {r.lbl} · {v.intentos} intentos
                           </p>
                         </div>

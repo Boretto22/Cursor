@@ -198,14 +198,14 @@ export function Perfil() {
           onChange={(e) => setNombreUsuario(e.target.value)}
         />
         <div className="grid grid-cols-2 gap-3 mt-3">
-          <div className="text-center bg-crux-beige/60 dark:bg-stone-700/40 rounded-xl p-3">
-            <p className="text-xs text-stone-500">Boulder máx.</p>
+          <div className="text-center bg-crux-beige/60 dark:bg-stone-800 rounded-xl p-3">
+            <p className="text-xs text-stone-500 dark:text-stone-400">Boulder máx.</p>
             <p className="text-xl font-bold text-crux-primary">
               {stats?.gradoMaxBou ?? "—"}
             </p>
           </div>
-          <div className="text-center bg-crux-beige/60 dark:bg-stone-700/40 rounded-xl p-3">
-            <p className="text-xs text-stone-500">Deportiva máx.</p>
+          <div className="text-center bg-crux-beige/60 dark:bg-stone-800 rounded-xl p-3">
+            <p className="text-xs text-stone-500 dark:text-stone-400">Deportiva máx.</p>
             <p className="text-xl font-bold text-crux-primary">
               {stats?.gradoMaxDep ?? "—"}
             </p>
@@ -343,6 +343,14 @@ export function Perfil() {
           </p>
           <p className="text-xs text-stone-400">
             App desenvolupada por Antoni Pozo Miró.
+          </p>
+          <p className="text-xs text-stone-400">
+            <a
+              href="mailto:pozotoni08@gmail.com"
+              className="underline hover:text-crux-primary transition-colors"
+            >
+              pozotoni08@gmail.com
+            </a>
           </p>
         </div>
       </Modal>

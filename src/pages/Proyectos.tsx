@@ -220,7 +220,7 @@ function ModalProyecto({ proyecto, onClose }: { proyecto: Proyecto | null; onClo
                 className={`p-2 rounded-xl text-sm font-medium text-left transition-all ${
                   local.modalidad === m.id
                     ? "bg-crux-primary text-white"
-                    : "bg-crux-beige dark:bg-stone-700"
+                    : "bg-crux-beige dark:bg-stone-800 dark:text-stone-300"
                 }`}
               >
                 {m.emoji} {m.nombre}
