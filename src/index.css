@@ -56,7 +56,8 @@
   }
 
   .card {
-    @apply bg-white rounded-2xl shadow-soft p-4 dark:bg-stone-800;
+    @apply bg-white rounded-2xl shadow-soft p-4
+           dark:bg-stone-800 dark:border dark:border-stone-700;
   }
 
   .input {

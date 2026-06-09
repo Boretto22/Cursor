@@ -95,7 +95,7 @@ export function Inicio() {
             <p className="text-2xl font-bold text-stone-800 dark:text-stone-100">
               {resumen?.sesionesSemana ?? 0}
             </p>
-            <p className="text-xs text-stone-500 mt-1">
+            <p className="text-xs text-stone-500 dark:text-stone-400 mt-1">
               {resumen?.diasUnicosSemana ?? 0} días únicos
             </p>
           </Card>
@@ -136,7 +136,7 @@ export function Inicio() {
           <div className="flex items-center gap-1">
             <span>Menos</span>
             <div className="flex gap-0.5">
-              <div className="w-2.5 h-2.5 rounded-sm bg-stone-100 dark:bg-stone-800" />
+              <div className="w-2.5 h-2.5 rounded-sm bg-stone-100 dark:bg-stone-700" />
               <div className="w-2.5 h-2.5 rounded-sm bg-crux-primary/30" />
               <div className="w-2.5 h-2.5 rounded-sm bg-crux-primary/55" />
               <div className="w-2.5 h-2.5 rounded-sm bg-crux-primary/80" />

@@ -11,21 +11,33 @@ function ctx(): AudioContext {
   return audioCtx;
 }
 
-export function beep(frecuencia = 880, duracionMs = 150, volumen = 0.15) {
+/**
+ * Plays a smooth 'piiiip' tone.
+ * @param frecuencia - Hz (default 880)
+ * @param duracionSeg - duration in seconds (default 0.5 → clear piip)
+ * @param volumen - peak gain 0–1 (default 0.7)
+ */
+export function beepPiip(frecuencia = 880, duracionSeg = 0.5, volumen = 0.7) {
   try {
     const c = ctx();
     const play = () => {
+      const now = c.currentTime;
       const osc = c.createOscillator();
       const gain = c.createGain();
+
       osc.type = "sine";
       osc.frequency.value = frecuencia;
-      gain.gain.value = volumen;
+
+      // Hold at full volume, then fade to silence in last 50ms
+      gain.gain.setValueAtTime(volumen, now);
+      gain.gain.setValueAtTime(volumen, now + duracionSeg - 0.05);
+      gain.gain.linearRampToValueAtTime(0, now + duracionSeg);
+
       osc.connect(gain).connect(c.destination);
-      osc.start();
-      setTimeout(() => {
-        try { osc.stop(); osc.disconnect(); gain.disconnect(); } catch { /* noop */ }
-      }, duracionMs);
+      osc.start(now);
+      osc.stop(now + duracionSeg);
     };
+
     if (c.state === "suspended") {
       c.resume().then(play).catch(() => {});
     } else {
@@ -36,9 +48,16 @@ export function beep(frecuencia = 880, duracionMs = 150, volumen = 0.15) {
   }
 }
 
+/**
+ * Legacy short click-beep (kept for backward compat).
+ */
+export function beep(frecuencia = 880, duracionMs = 150, volumen = 0.15) {
+  beepPiip(frecuencia, duracionMs / 1000, volumen);
+}
+
 export function beepDoble() {
-  beep(880, 120);
-  setTimeout(() => beep(1100, 180), 160);
+  beepPiip(880, 0.12);
+  setTimeout(() => beepPiip(1100, 0.18), 160);
 }
 
 export function vibrar(patron: number | number[]) {

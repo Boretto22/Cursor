@@ -11,7 +11,7 @@ interface HeatmapProps {
 }
 
 function colorPorIntensidad(v: number): string {
-  if (v === 0) return "bg-stone-100 dark:bg-stone-800";
+  if (v === 0) return "bg-stone-100 dark:bg-stone-700";
   if (v === 1) return "bg-crux-primary/30";
   if (v === 2) return "bg-crux-primary/55";
   if (v === 3) return "bg-crux-primary/80";

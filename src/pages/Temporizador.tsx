@@ -19,7 +19,7 @@ import { Modal } from "../components/ui/Modal";
 import { db } from "../db/database";
 import type { TimerPreset } from "../db/types";
 import { hoyDateTimeISO } from "../utils/fechas";
-import { beep, vibrar } from "../utils/audio";
+import { beepPiip, vibrar } from "../utils/audio";
 
 // ─── types ───────────────────────────────────────────────────────────────────
 
@@ -80,18 +80,17 @@ function calcularTotalSeg(c: ConfigTimer): number {
 
 // ─── audio helpers ────────────────────────────────────────────────────────────
 
-/** Short high beep — rep transitions */
+/** 880 Hz · 0.45 s — end of rep / end of rest-rep */
 function beepRep() {
-  beep(880, 100, 0.15);
+  beepPiip(880, 0.45);
 }
-/** Long low beep — series / completion transitions */
+/** 660 Hz · 0.55 s — end of series / end of rest-series */
 function beepSeries() {
-  beep(440, 300, 0.18);
+  beepPiip(660, 0.55);
 }
-/** Double ascending beep — workout done */
+/** 660 Hz · 1 s — full workout complete */
 function beepDone() {
-  beep(440, 300, 0.18);
-  setTimeout(() => beep(880, 250, 0.15), 380);
+  beepPiip(660, 1.0, 0.8);
 }
 
 // ─── component ────────────────────────────────────────────────────────────────
@@ -203,7 +202,7 @@ export function Temporizador() {
       if (restanteRef.current <= 0) {
         avanzar();
       } else if (restanteRef.current <= 3) {
-        beep(660, 80, 0.06);
+        beepPiip(660, 0.08, 0.06);
       }
     }, 1000);
     return () => {
@@ -233,7 +232,7 @@ export function Temporizador() {
     setTiempoElapsado(0);
     setMostrarConfig(false);
     setCorriendo(true);
-    beep(880, 200);
+    beepPiip(880, 0.2, 0.5);
     vibrar(100);
   }
 
