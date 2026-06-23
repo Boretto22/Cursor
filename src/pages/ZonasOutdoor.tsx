@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useLiveQuery } from "dexie-react-hooks";
 import {
@@ -43,6 +43,24 @@ function ClickHandler({ onClick }: { onClick: (lat: number, lng: number) => void
       onClick(e.latlng.lat, e.latlng.lng);
     },
   });
+  return null;
+}
+
+function MapController({ position }: { position: [number, number] | null }) {
+  const map = useMap();
+  const prevPosition = useRef<[number, number] | null>(null);
+
+  useEffect(() => {
+    if (
+      position &&
+      (prevPosition.current?.[0] !== position[0] ||
+        prevPosition.current?.[1] !== position[1])
+    ) {
+      prevPosition.current = position;
+      map.panTo(position);
+    }
+  }, [position, map]);
+
   return null;
 }
 
@@ -95,7 +113,6 @@ export function ZonasOutdoor() {
     setModoAgregar(false);
   }
 
-  const mapaColapsado = pinPendiente !== null;
   const centro: [number, number] =
     zonas && zonas.length > 0 ? [zonas[0].lat, zonas[0].lng] : [42.5, 1.5];
 
@@ -133,10 +150,7 @@ export function ZonasOutdoor() {
         </div>
       )}
 
-      <div
-        className="relative rounded-2xl overflow-hidden shadow-soft transition-all duration-300"
-        style={{ height: mapaColapsado ? "150px" : "55vh" }}
-      >
+      <div className="relative rounded-2xl overflow-hidden shadow-soft flex-shrink-0 h-64">
         <MapContainer
           center={centro}
           zoom={zonas && zonas.length > 0 ? 6 : 4}
@@ -167,6 +181,7 @@ export function ZonasOutdoor() {
             <Marker position={pinPendiente} icon={iconoPendiente} />
           )}
           <ClickHandler onClick={onMapClick} />
+          <MapController position={pinPendiente} />
           <CentrarBoton />
         </MapContainer>
       </div>
