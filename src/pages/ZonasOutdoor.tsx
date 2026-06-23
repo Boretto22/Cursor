@@ -37,6 +37,13 @@ const iconoCrux = new L.DivIcon({
   iconAnchor: [16, 16],
 });
 
+const iconoPendiente = new L.DivIcon({
+  className: "",
+  html: `<div style="background:#8B6914;width:32px;height:32px;border-radius:50%;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;color:white;font-size:16px;">📍</div>`,
+  iconSize: [32, 32],
+  iconAnchor: [16, 16],
+});
+
 function ClickHandler({ onClick }: { onClick: (lat: number, lng: number) => void }) {
   useMapEvents({
     click(e) {
@@ -46,6 +53,8 @@ function ClickHandler({ onClick }: { onClick: (lat: number, lng: number) => void
   return null;
 }
 
+// Pans to a new pin position after calling invalidateSize so the fixed
+// container dimensions are known to Leaflet before repositioning.
 function MapController({ position }: { position: [number, number] | null }) {
   const map = useMap();
   const prevPosition = useRef<[number, number] | null>(null);
@@ -57,10 +66,25 @@ function MapController({ position }: { position: [number, number] | null }) {
         prevPosition.current?.[1] !== position[1])
     ) {
       prevPosition.current = position;
+      map.invalidateSize();
       map.panTo(position);
     }
   }, [position, map]);
 
+  return null;
+}
+
+// Ensures the map repaints correctly after the modal animation completes
+// and immediately centers on the saved zone coordinates.
+function MapInitializer({ lat, lng }: { lat: number; lng: number }) {
+  const map = useMap();
+  useEffect(() => {
+    const t = setTimeout(() => {
+      map.invalidateSize();
+      map.setView([lat, lng], 14);
+    }, 100);
+    return () => clearTimeout(t);
+  }, [map, lat, lng]);
   return null;
 }
 
@@ -83,26 +107,22 @@ function CentrarBoton() {
   );
 }
 
-const iconoPendiente = new L.DivIcon({
-  className: "",
-  html: `<div style="background:#8B6914;width:32px;height:32px;border-radius:50%;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;color:white;font-size:16px;">📍</div>`,
-  iconSize: [32, 32],
-  iconAnchor: [16, 16],
-});
-
 export function ZonasOutdoor() {
   const navigate = useNavigate();
+  // editando is only used for editing EXISTING zones (has an id)
   const [editando, setEditando] = useState<ZonaOutdoor | null>(null);
   const [seleccionada, setSeleccionada] = useState<ZonaOutdoor | null>(null);
   const [modoAgregar, setModoAgregar] = useState(false);
   const [pinPendiente, setPinPendiente] = useState<[number, number] | null>(null);
+  // Inline form data for a brand-new zone (shown below the map, not in a modal)
+  const [nuevaZona, setNuevaZona] = useState<ZonaOutdoor | null>(null);
 
   const zonas = useLiveQuery(async () => db.zonasOutdoor.toArray());
 
   function onMapClick(lat: number, lng: number) {
     if (!modoAgregar) return;
     setPinPendiente([lat, lng]);
-    setEditando({
+    setNuevaZona({
       nombre: "",
       lat,
       lng,
@@ -111,6 +131,29 @@ export function ZonasOutdoor() {
       visitas: 1,
     });
     setModoAgregar(false);
+  }
+
+  function cancelarNueva() {
+    setNuevaZona(null);
+    setPinPendiente(null);
+  }
+
+  async function guardarNueva() {
+    if (!nuevaZona || !nuevaZona.nombre) return;
+    await db.zonasOutdoor.add(nuevaZona);
+    setNuevaZona(null);
+    setPinPendiente(null);
+  }
+
+  function toggleModNueva(m: Modalidad) {
+    if (!nuevaZona) return;
+    const has = nuevaZona.modalidades.includes(m);
+    setNuevaZona({
+      ...nuevaZona,
+      modalidades: has
+        ? nuevaZona.modalidades.filter((x) => x !== m)
+        : [...nuevaZona.modalidades, m],
+    });
   }
 
   const centro: [number, number] =
@@ -135,6 +178,7 @@ export function ZonasOutdoor() {
               onClick={() => {
                 setModoAgregar((v) => !v);
                 setPinPendiente(null);
+                setNuevaZona(null);
               }}
             >
               {modoAgregar ? "Cancelar" : <><Plus className="w-4 h-4" /> Añadir</>}
@@ -150,7 +194,8 @@ export function ZonasOutdoor() {
         </div>
       )}
 
-      <div className="relative rounded-2xl overflow-hidden shadow-soft flex-shrink-0 h-64">
+      {/* Map — fixed height so the keyboard / content below never shrinks it */}
+      <div className="relative rounded-2xl overflow-hidden shadow-soft flex-shrink-0 h-48">
         <MapContainer
           center={centro}
           zoom={zonas && zonas.length > 0 ? 6 : 4}
@@ -186,7 +231,62 @@ export function ZonasOutdoor() {
         </MapContainer>
       </div>
 
-      {zonas && zonas.length > 0 ? (
+      {/* Inline new-zone form — appears below the map after tapping, no modal */}
+      {nuevaZona && (
+        <div className="space-y-4">
+          <p className="text-xs font-medium text-crux-primary">
+            📍 {nuevaZona.lat.toFixed(4)}, {nuevaZona.lng.toFixed(4)}
+          </p>
+          <Input
+            label="Nombre"
+            placeholder="Ej: Margalef"
+            value={nuevaZona.nombre}
+            onChange={(e) => setNuevaZona({ ...nuevaZona, nombre: e.target.value })}
+          />
+          <div className="grid grid-cols-2 gap-3">
+            <Input
+              label="Región"
+              value={nuevaZona.region ?? ""}
+              onChange={(e) => setNuevaZona({ ...nuevaZona, region: e.target.value })}
+            />
+            <Input
+              label="País"
+              value={nuevaZona.pais ?? ""}
+              onChange={(e) => setNuevaZona({ ...nuevaZona, pais: e.target.value })}
+            />
+          </div>
+          <div>
+            <label className="label">Modalidades disponibles</label>
+            <div className="flex flex-wrap gap-1.5">
+              {MODALIDADES.filter((m) => m.id.includes("outdoor")).map((m) => (
+                <Chip
+                  key={m.id}
+                  activo={nuevaZona.modalidades.includes(m.id as Modalidad)}
+                  onClick={() => toggleModNueva(m.id as Modalidad)}
+                >
+                  {m.emoji} {m.nombre}
+                </Chip>
+              ))}
+            </div>
+          </div>
+          <Textarea
+            label="Notas"
+            value={nuevaZona.notas ?? ""}
+            onChange={(e) => setNuevaZona({ ...nuevaZona, notas: e.target.value })}
+          />
+          <div className="flex gap-2 pt-1">
+            <Button variante="ghost" onClick={cancelarNueva} bloque>
+              Cancelar
+            </Button>
+            <Button onClick={guardarNueva} bloque disabled={!nuevaZona.nombre}>
+              Guardar
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Zone list */}
+      {!nuevaZona && zonas && zonas.length > 0 ? (
         <div className="space-y-2">
           {zonas.map((z) => (
             <Card
@@ -210,7 +310,7 @@ export function ZonasOutdoor() {
           ))}
         </div>
       ) : (
-        !modoAgregar && (
+        !nuevaZona && !modoAgregar && (
           <EmptyState
             icono={Mountain}
             titulo="Sin zonas registradas"
@@ -219,14 +319,13 @@ export function ZonasOutdoor() {
         )
       )}
 
+      {/* Edit existing zone — modal only for editing */}
       <ModalEditarZona
         zona={editando}
-        onClose={() => {
-          setEditando(null);
-          setPinPendiente(null);
-        }}
+        onClose={() => setEditando(null)}
       />
 
+      {/* View saved zone modal */}
       <Modal
         abierto={!!seleccionada}
         onClose={() => setSeleccionada(null)}
@@ -234,6 +333,24 @@ export function ZonasOutdoor() {
       >
         {seleccionada && (
           <div className="space-y-3">
+            {/* Mini map centered on the zone with the marker */}
+            <div className="rounded-xl overflow-hidden flex-shrink-0 h-48 -mx-4 -mt-4">
+              <MapContainer
+                center={[seleccionada.lat, seleccionada.lng]}
+                zoom={14}
+                style={{ height: "100%", width: "100%" }}
+                zoomControl={false}
+                attributionControl={false}
+              >
+                <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                <Marker
+                  position={[seleccionada.lat, seleccionada.lng]}
+                  icon={iconoCrux}
+                />
+                <MapInitializer lat={seleccionada.lat} lng={seleccionada.lng} />
+              </MapContainer>
+            </div>
+
             <p className="text-sm text-stone-600 dark:text-stone-300">
               {[seleccionada.region, seleccionada.pais].filter(Boolean).join(", ")}
             </p>
